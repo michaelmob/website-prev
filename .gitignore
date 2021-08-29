@@ -1,0 +1,9 @@
+# IDEs
+.idea/
+.vscode/
+
+# Hugo
+/resources/
+public/
+jsconfig.json
+node_modules/
