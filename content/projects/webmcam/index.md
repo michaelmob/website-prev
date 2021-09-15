@@ -3,13 +3,13 @@
 title: "WebMCam"
 summary: ""
 authors: []
-tags: ["C#"]
+tags: ["Cs"]
 categories: []
 date: 2014-04-27T22:14:00.000Z
 draft: false
 
 tags:
-  - C#
+  - Cs
 
 external_link: https://github.com/michaelmob/WebMCam
 
