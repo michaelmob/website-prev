@@ -10,8 +10,10 @@ categories:
 series:
 date: '2020-08-29'
 lastmod: '2020-08-29'
-draft: true
+draft: false
 ---
+
+\* *This article is still a work in-progress.*
 
 # A little bit of theory
 
