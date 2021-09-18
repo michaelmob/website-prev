@@ -9,3 +9,4 @@ node_modules/
 /resources/
 public/
 jsconfig.json
+node_modules
