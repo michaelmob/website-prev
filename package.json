@@ -5,7 +5,8 @@
     "repository": "",
     "author": "",
     "devDependencies": {
-        "postcss": "^8.2.10"
+        "postcss": "^8.2.10",
+        "postcss-cli": "^8.3.1"
     },
     "browserslist": [
         "last 1 version",
