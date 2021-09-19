@@ -23,8 +23,8 @@ serve the purpose of controlling the **view** or **cursor**.
 
 <!-- <video src="example-of-view.webm" alt="Visual example of view definition" autoplay></video> -->
 
-The **view** contains all the content and the **cursor**. Scrolling is an action
-that moves the **view**.
+The **view** contains all of the content and the **cursor**. Scrolling is an
+action that moves the **view**.
 
 <video src="example-of-cursor.webm" alt="Visual example of cursor definition" autoplay loop></video>
 
@@ -32,7 +32,7 @@ The **cursor** (above) is the blinking line you see in a text field. It lets you
 that the position it's at is where new input will be placed.
 
 All of the actions of moving the view and the cursor are controlled by the
-control keys, self-expalantory.
+control keys.
 
 
 # A problem...
@@ -58,7 +58,7 @@ keymap with some niceties.
 
 When pressing shift you access the second level chooser, you can think of them
 them as the symbols above the num-keys. We can create a [third level
-chooser](https://fsymbols.com/keyboard/linux/choosers/) with our own keys.  It's
+chooser](https://fsymbols.com/keyboard/linux/choosers/) with our own keymap.  It's
 possible to use the fourth or fifth level chooser if the third level conflicts
 with your native keyboard layout. The key to access the third level chooser is
 called the Compose key and is often tied to the
@@ -68,8 +68,8 @@ Many keyboards do not feature the <kbd>AltGr</kbd> key, we can remap Caps Lock t
 our compose key instead with an xkb option:
 [level3(caps_switch)](https://superuser.com/questions/138708/xorg-how-can-i-map-altgr-to-the-capslock-key-to-toggle-3rd-level-symbols).
 
-With our new symbols map and compose key remapped to `Caps Lock`, we get these
-extra key combinations:
+With the new symbols map and compose key remapped to `Caps Lock`, we can get
+these extra key combinations:
 | Key Combination                     | Action    | Xkb                                                  |
 |-------------------------------------|-----------|------------------------------------------------------|
 | <kbd>Caps Lock</kbd> + <kbd>H</kbd> | Left      | `key <AC06> { [ h, H, Left ] };`                     |
@@ -90,9 +90,9 @@ extra key combinations:
 | <kbd>Caps Lock</kbd> + <kbd>[</kbd> | Escape    | `key <AD11> { [ bracketleft, braceleft, Escape ] };` |
 
 
-# How...
+# How... (Manually) <small>[Skip to Patches](#patches)</small>
 
-## 1. Create Symbols File
+## 1. Create the Symbols File
 <!-- https://help.ubuntu.com/community/Custom%20keyboard%20layout%20definitions -->
 
 Create new file `/usr/share/X11/xkb/symbols/vi` with our symbols.
@@ -100,17 +100,19 @@ Create new file `/usr/share/X11/xkb/symbols/vi` with our symbols.
 {{< gist michaelmob dfff1608af185ca31af767dfa393645a vi >}}
 
 
-## 2. Update Rule Files
+## 2. Update the Rule Files
 
-Four more rules files must be edited namely:
+Two rules files must be updated, namely:
 - `/usr/share/X11/xkb/rules/base.lst`
 - `/usr/share/X11/xkb/rules/base.xml`
-- `/usr/share/X11/xkb/rules/evdev.lst`
-- `/usr/share/X11/xkb/rules/evdev.xml`
 
-The `xml` files must be identical to eachother and the `lst` files must be
-identical to eachother. These can *probably* be symlinked.
+Next we will symlink `evdev.lst` and `evdev.xml` so we won't have to edit both
+sets of these files.
 
+```sh
+ln -sf /usr/share/X11/xkb/rules/base.xml /usr/share/X11/xkb/rules/evdev.xml
+ln -sf /usr/share/X11/xkb/rules/base.lst /usr/share/X11/xkb/rules/evdev.lst
+```
 
 ### Update the XML rules
 
@@ -118,15 +120,15 @@ In the `xml` files, we need to add a `<layout/>` element to `<layoutList/>` in
 both the base and evdev files.
 
 ```xml
-<!-- /usr/share/X11/xkb/rules/{base,evdev}.xml
+<!-- /usr/share/X11/xkb/rules/base.xml
      ... -->
 <layoutList>
-  <!-- START; add the below element to layoutList -->
+  <!-- START; add the element below to layoutList -->
   <layout>
     <configItem>
       <name>vi</name>
       <shortDescription>vi</shortDescription>
-      <description>English (vi)</description>
+      <description>English (VI)</description>
       <languageList><iso639Id>eng</iso639Id></languageList>
     </configItem>
   </layout>
@@ -141,12 +143,12 @@ These are a little less complicated.
 
 Each section is represented with an exclamation mark!
 
-In the `/usr/share/X11/xkb/rules/{base,evdev}.lst` files, we need to add our new
+In the `/usr/share/X11/xkb/rules/base.lst` files, we need to add our new
 keyboard layout.
 
 Find the `! layout` section and add our new layout:
 ```
-  vi              English (vi)
+  vi              English (VI)
 ```
 
 And we're done! Pop_OS! didn't need to be rebooted.
@@ -163,16 +165,13 @@ The following patch is to make life easier by patching the XML rules files.
 
 {{< gist michaelmob dfff1608af185ca31af767dfa393645a xkb-xml.patch >}}
 
-To patch the required files, download the patch.
+
 ```sh
 wget -O ~/Downloads/xkb-xml.patch 'https://gist.githubusercontent.com/michaelmob/dfff1608af185ca31af767dfa393645a/raw/xkb-xml.patch'
-
-xkb_path=/usr/share/X11/xkb
-xkb_local_path=~/Downloads/xkb-xml.patch
-
-# You'll probably need superuser permissions
-patch $xkb_path/rules/base.xml $xkb_local_path/xkb-xml.patch
-patch $xkb_path/rules/evdev.xml $xkb_local_path/xkb-xml.patch
+mv /usr/share/X11/xkb/rules/evdev.xml{,.old}
+ln -sf /usr/share/X11/xkb/rules/{base,evdev}.xml
+patch --dry-run /usr/share/X11/xkb/rules/base.xml < ~/Downloads/xkb-xml.patch
+# Remove --dry-run to patch this system file
 ```
 
 *Aside:* You can spot a little nugget of how the diff algorithm calculated this
@@ -186,18 +185,29 @@ efficient to match to the bottom-most tag pair.
 {{< gist michaelmob dfff1608af185ca31af767dfa393645a xkb-lst.patch >}}
 
 ```sh
-wget -O ~/Downloads/xkb-xml.patch 'https://gist.githubusercontent.com/michaelmob/dfff1608af185ca31af767dfa393645a/raw/xkb-lst.patch'
-
-xkb_path=/usr/share/X11/xkb
-xkb_local_path=~/Downloads/xkb-lst.patch
-
-# You'll probably need superuser permissions for this one too
-patch $xkb_path/rules/base.lst $xkb_local_path/xkb-lst.patch
-patch $xkb_path/rules/evdev.lst $xkb_local_path/xkb-lst.patch
+wget -O ~/Downloads/xkb-lst.patch 'https://gist.githubusercontent.com/michaelmob/dfff1608af185ca31af767dfa393645a/raw/xkb-lst.patch'
+mv /usr/share/X11/xkb/rules/evdev.lst{,.old}  # backup old evdev.lst, to evdev.lst.old
+ln -sf /usr/share/X11/xkb/rules/{base,evdev}.lst
+patch --dry-run /usr/share/X11/xkb/rules/base.lst < ~/Downloads/xkb-lst.patch
+# Again, remove --dry-run to patch this system file
 ```
 
 # And that's it!
-Change your keyboard input to `English (vi)`.
+We can now set our Input Source.
 
-<!-- ### The Control Keys
-![hi](control-keys.png) -->
+## In GNOME
+
+1. Open up GNOME Settings and head to the **Keyboard** section. Click the
+**`+`** icon.
+![GNOME Keyboard Settings](keyboard-settings.png)
+
+2. Select `English (United States)` and scroll down to find `English (VI)`.
+3. Choose the entry and click `Add`.
+![GNOME Input Sources](input-source.png)
+
+4. Change your keyboard input to `English (VI)`.
+5. Try out your new shortcuts!
+
+
+# More Resources
+https://freedesktop.org/wiki/Software/XKeyboardConfig/Creating/
